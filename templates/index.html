@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta charset="UTF-8">
+<title>時間割設定</title>
+
+<style>
+body { font-family:"Segoe UI","Helvetica Neue",sans-serif; padding:25px; background:#f7f8fc; color:#333; }
+h1 { text-align:center; margin-bottom:25px; color:#444; }
+h2 { color:#555; border-left:6px solid #4CAF50; padding-left:12px; margin-bottom:15px; }
+
+.block { background:#fff; padding:20px; margin-bottom:28px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.08); border:1px solid #e3e3e3; }
+table { border-collapse:collapse; width:100%; border-radius:12px; overflow:hidden; background:#fff; }
+th { background:#4CAF50; color:white; padding:12px 8px; font-size:15px; }
+td { border:1px solid #ddd; padding:10px 8px; }
+tr:nth-child(even){background:#fafafa;}
+
+input[type="time"], input[type="text"], input[type="password"] { width:90%; padding:7px; border:1px solid #ccc; border-radius:6px; font-size:14px; transition:0.2s; }
+input:focus { border-color:#4CAF50; box-shadow:0 0 4px rgba(76,175,80,0.4); outline:none; }
+
+button { padding:10px 18px; border:none; border-radius:8px; cursor:pointer; transition:0.2s; font-size:14px; margin-top:10px; }
+button:hover { background:#ccc; }
+button.run { background:#2196F3; color:white; font-weight:bold; }
+button.run:hover { background:#1976D2; }
+
+.block input[type="text"][name="moodle_username"], .block input[type="password"][name="moodle_password"] { width:25%; }
+</style>
+</head>
+<body>
+
+<h1>Moodle auto opener</h1>
+
+<form method="post">
+
+<div class="block">
+<h2>時間割</h2>
+<table id="timetable-table">
+    <thead>
+        <tr>
+            <th>限目</th>
+            <th>時間</th>
+            <th>月</th>
+            <th>火</th>
+            <th>水</th>
+            <th>木</th>
+            <th>金</th>
+        </tr>
+    </thead>
+    <tbody id="timetable-body">
+        {% for p in settings.period_times %}
+        <tr data-period="{{p.period}}">
+            <td>{{ p.period }}限</td>
+            <td>
+                <input type="time" name="period_start_{{p.period}}" value="{{ p.start }}">〜
+                <input type="time" name="period_end_{{p.period}}" value="{{ p.end }}">
+            </td>
+            {% for day in ["Monday","Tuesday","Wednesday","Thursday","Friday"] %}
+                {% set ns = namespace(subj="") %}
+                {% for item in settings.timetable %}
+                    {% if item.day == day and item.period == p.period %}
+                        {% set ns.subj = item.subject %}
+                    {% endif %}
+                {% endfor %}
+                <td><input type="text" name="subject_{{day}}_{{p.period}}" value="{{ ns.subj }}"></td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<div class="block">
+<h2>Moodle ログイン情報</h2>
+<label>ユーザー名：<input type="text" name="moodle_username" value="{{ settings.get('moodle_username', '') }}"></label><br>
+<label>パスワード：<input type="password" name="moodle_password" value="{{ settings.get('moodle_password', '') }}"></label><br>
+</div>
+
+<button type="submit">保存する</button>
+</form>
+
+<form method="post" action="{{ url_for('run_worker') }}">
+<button type="submit" class="run">現在時刻の授業を開く</button>
+</form>
+
+<form method="post" action="{{ url_for('shutdown') }}">
+    <button type="submit" style="background:red;color:white;padding:10px 18px;border:none;border-radius:6px;">
+        アプリを終了
+    </button>
+</form>
+
+</body>
+</html>
